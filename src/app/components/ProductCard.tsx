@@ -16,49 +16,50 @@ interface Props {
 
 export function ProductCard({ product, quantity, onUpdateQuantity, language }: Props) {
   return (
-    <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20">
+    <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20 rounded-3xl">
       <div className="relative aspect-square overflow-hidden bg-muted">
         <Image
           src={product.imageUrl}
           alt={product.name}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          sizes="(max-width: 768px) 50vw, 25vw"
         />
         {quantity > 0 && (
-          <div className="absolute top-2 right-2 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg animate-in zoom-in-50">
+          <div className="absolute top-3 right-3 bg-secondary text-secondary-foreground w-10 h-10 rounded-2xl flex items-center justify-center font-black shadow-lg animate-in zoom-in-50 border-2 border-white">
             {quantity}
           </div>
         )}
       </div>
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-1 min-h-[4.5rem]">
-          <h3 className="text-lg font-bold line-clamp-1 text-primary">
+      <CardContent className="p-3">
+        <div className="flex flex-col gap-0.5 min-h-[3.5rem]">
+          <h3 className="text-sm font-black line-clamp-1 text-primary">
             {language === 'en' ? product.name : product.nameAm}
           </h3>
-          <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
+          <p className="text-[10px] text-muted-foreground line-clamp-1 uppercase tracking-tighter">{product.category}</p>
         </div>
         
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-2 flex flex-col gap-3">
           <div className="flex flex-col">
-            <span className="text-xl font-bold text-foreground">ETB {product.price}</span>
-            <span className="text-xs text-muted-foreground">per {product.unit}</span>
+            <span className="text-lg font-black text-foreground">ETB {product.price}</span>
+            <span className="text-[10px] text-muted-foreground uppercase">{product.unit}</span>
           </div>
 
-          <div className="flex items-center gap-2 bg-background p-1 rounded-full border shadow-sm">
+          <div className="flex items-center justify-between bg-muted/30 p-1.5 rounded-2xl border">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full hover:bg-secondary/20"
+              className="h-10 w-10 rounded-xl hover:bg-white bg-white/50 shadow-sm"
               onClick={() => onUpdateQuantity(product.id, -1)}
               disabled={quantity === 0}
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span className="w-4 text-center font-bold text-sm">{quantity}</span>
+            <span className="w-6 text-center font-black text-base">{quantity}</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full hover:bg-secondary/20 text-primary"
+              className="h-10 w-10 rounded-xl hover:bg-primary hover:text-white bg-white/50 shadow-sm text-primary"
               onClick={() => onUpdateQuantity(product.id, 1)}
             >
               <Plus className="h-4 w-4" />
