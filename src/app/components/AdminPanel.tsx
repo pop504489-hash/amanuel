@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useAuth } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { uploadToCloudinary } from '@/app/lib/cloudinary';
@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, UploadCloud, XCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, PackagePlus, UploadCloud, XCircle, CheckCircle2, LogOut } from 'lucide-react';
 import Image from 'next/image';
+import { signOut } from 'firebase/auth';
 
 export function AdminPanel() {
   const [name, setName] = useState('');
@@ -24,9 +25,14 @@ export function AdminPanel() {
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   
-  // Fix: useFirestore returns the instance directly, do not destructure
   const firestore = useFirestore();
+  const auth = useAuth();
   const { toast } = useToast();
+
+  const handleLogout = () => {
+    signOut(auth);
+    toast({ title: "Logged Out", description: "You have been securely signed out." });
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -39,13 +45,9 @@ export function AdminPanel() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    // 1. Prevent default form submission behavior (page refresh)
     e.preventDefault();
-    console.log('Submission initiated...');
-
-    // 2. Client-side validation
+    
     if (!name || !price || !file) {
-      console.warn('Submission blocked: Missing required fields');
       toast({ 
         title: "Missing Information / መረጃ ጎድሏል", 
         description: "Please provide a name, price, and a product photo.", 
@@ -54,26 +56,20 @@ export function AdminPanel() {
       return;
     }
 
-    // 3. Database readiness check
     if (!firestore) {
-      console.error('Firestore instance not available');
       toast({
         title: "Database Error",
-        description: "System is still connecting to the database. Please try again in a moment.",
+        description: "System is still connecting to the database.",
         variant: "destructive"
       });
       return;
     }
 
     setIsUploading(true);
-    console.log('Starting Cloudinary upload...');
     
     try {
-      // 4. Upload Image to Cloudinary (Awaited)
       const imageUrl = await uploadToCloudinary(file);
-      console.log('Cloudinary upload success. Image URL:', imageUrl);
-
-      // 5. Prepare Product Data for Firestore
+      
       const productData = {
         name,
         nameAm: nameAm || name,
@@ -87,19 +83,14 @@ export function AdminPanel() {
         description: `${name} in ${category}`,
       };
 
-      // 6. Save to Firestore (Non-blocking update)
       const productsRef = collection(firestore, 'products');
-      console.log('Queueing Firestore document creation...');
       addDocumentNonBlocking(productsRef, productData);
 
-      // 7. Success feedback
-      console.log('Product posted successfully!');
       toast({ 
         title: "Success! / ተሳክቷል!", 
         description: `${name} has been added to the catalog.`,
       });
 
-      // 8. Reset form state for next entry
       setName('');
       setNameAm('');
       setPrice('');
@@ -107,20 +98,29 @@ export function AdminPanel() {
       setPreview(null);
       
     } catch (error: any) {
-      console.error('Submission failed with error:', error);
       toast({ 
         title: "Upload Error / ስህተት ተከስቷል", 
         description: error.message || "Failed to post product.", 
         variant: "destructive" 
       });
     } finally {
-      // 9. Re-enable the button regardless of outcome
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-4">
+    <div className="max-w-2xl mx-auto py-4 space-y-4">
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          onClick={handleLogout}
+          className="rounded-full gap-2 text-destructive border-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout / ውጣ
+        </Button>
+      </div>
+
       <Card className="border-2 shadow-xl overflow-hidden rounded-3xl">
         <CardHeader className="bg-primary text-primary-foreground p-6">
           <CardTitle className="flex items-center gap-2 text-2xl font-black">

@@ -6,6 +6,7 @@ import { ProductCard } from '@/app/components/ProductCard';
 import { OrderHistory } from '@/app/components/OrderHistory';
 import { AIInsights } from '@/app/components/AIInsights';
 import { AdminPanel } from '@/app/components/AdminPanel';
+import { LoginForm } from '@/app/components/LoginForm';
 import { CartSidebar } from '@/app/components/CartSidebar';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -26,7 +27,7 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
   const t = translations[language];
 
-  // 1. Handle Automatic Anonymous Auth
+  // 1. Handle Automatic Anonymous Auth for Guests
   useEffect(() => {
     if (!isUserLoading && !user && auth) {
       console.log('No user detected, initiating anonymous sign-in...');
@@ -34,9 +35,8 @@ export default function Home() {
     }
   }, [user, isUserLoading, auth]);
 
-  // 2. Fetch Real Products from Firestore (Only when user is authenticated)
+  // 2. Fetch Real Products from Firestore
   const productsQuery = useMemoFirebase(() => {
-    // Crucial: Wait for both firestore and user to be ready to avoid permission errors
     if (!firestore || !user) return null;
     return query(collection(firestore, 'products'), orderBy('createdAt', 'desc'));
   }, [firestore, user]);
@@ -84,6 +84,9 @@ export default function Home() {
   };
 
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Helper to check if current user is a "real" admin (Email login, not anonymous)
+  const isAdmin = user && !user.isAnonymous;
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,7 +163,7 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="admin" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
-            <AdminPanel />
+            {isAdmin ? <AdminPanel /> : <LoginForm />}
           </TabsContent>
         </Tabs>
       </main>

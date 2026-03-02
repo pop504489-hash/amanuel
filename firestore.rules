@@ -7,11 +7,7 @@ service cloud.firestore {
      * 
      * Core Philosophy:
      * This ruleset employs a strict Path-Based Ownership model for user-specific data and a 
-     * Database Access Control (DBAC) model for administrative tasks. User data is nested 
-     * under unique user IDs to ensure Authorization Independence.
-     * 
-     * NOTE: For the prototype phase, product management rules have been relaxed to allow
-     * any authenticated user to create/update products to facilitate immediate testing.
+     * Database Access Control (DBAC) model for administrative tasks.
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
@@ -21,19 +17,21 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    /** @description Checks if the user is authenticated and NOT anonymous. */
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
     /** @description Checks if the authenticated user matches the provided ID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if a document exists and the user is the owner. Used for updates/deletes. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
     /** @description Checks if the user has an entry in the admin roles collection. */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // In this prototype, we check for verified (email) users. 
+      // For production, you would use: exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+      return isVerifiedUser();
     }
 
     // --- COLLECTION RULES ---
@@ -41,58 +39,33 @@ service cloud.firestore {
     /**
      * @description Global product catalog. 
      * @path /products/{productId}
-     * @allow get, list: if isSignedIn();
-     * @allow create, update, delete: if isSignedIn(); // Relaxed from isAdmin() for prototype testing
      */
     match /products/{productId} {
       allow get, list: if isSignedIn();
-      allow create, update, delete: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description User profile for shop metadata. Strict ownership per userId path.
+     * @description User profile for shop metadata.
      */
     match /users/{userId}/profile/{profileId} {
       allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow create, update: if isOwner(userId);
       allow delete: if false; 
     }
 
     /**
-     * @description Shop orders. Enforces ownership and relational integrity with shopId.
+     * @description Shop orders.
      */
     match /users/{userId}/orders/{orderId} {
       allow get, list: if isOwner(userId);
-      
-      allow create: if isOwner(userId) 
-                    && request.resource.data.shopId == userId;
-      
-      allow update: if isExistingOwner(userId) 
-                    && request.resource.data.shopId == resource.data.shopId;
-      
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId);
 
       match /orderItems/{orderItemId} {
         allow get, list: if isOwner(userId);
-        
-        allow create: if isOwner(userId) 
-                      && request.resource.data.orderId == orderId;
-        
-        allow update: if isExistingOwner(userId) 
-                      && request.resource.data.orderId == resource.data.orderId;
-                      
-        allow delete: if isExistingOwner(userId);
+        allow create, update, delete: if isOwner(userId);
       }
-    }
-
-    /**
-     * @description Admin role definition collection.
-     */
-    match /roles_admin/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
     }
   }
 }
