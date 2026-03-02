@@ -1,0 +1,53 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "soft-drinks-crate",
+      "description": "Crate of colorful soft drinks bottles",
+      "imageUrl": "https://picsum.photos/seed/softdrinks/400/400",
+      "imageHint": "soft drinks"
+    },
+    {
+      "id": "cooking-oil",
+      "description": "Large bottles of cooking oil in a row",
+      "imageUrl": "https://picsum.photos/seed/cookingoil/400/400",
+      "imageHint": "cooking oil"
+    },
+    {
+      "id": "rice-bag",
+      "description": "Large sack of rice",
+      "imageUrl": "https://picsum.photos/seed/rice/400/400",
+      "imageHint": "rice bag"
+    },
+    {
+      "id": "flour-bag",
+      "description": "Large sack of flour",
+      "imageUrl": "https://picsum.photos/seed/flour/400/400",
+      "imageHint": "flour bag"
+    },
+    {
+      "id": "cleaning-supplies",
+      "description": "Assorted cleaning supply bottles",
+      "imageUrl": "https://picsum.photos/seed/cleaning/400/400",
+      "imageHint": "cleaning supplies"
+    },
+    {
+      "id": "bottled-water",
+      "description": "Pack of mineral water bottles",
+      "imageUrl": "https://picsum.photos/seed/water/400/400",
+      "imageHint": "water bottles"
+    },
+    {
+      "id": "snacks-box",
+      "description": "Large box of various snack packets",
+      "imageUrl": "https://picsum.photos/seed/snacks/400/400",
+      "imageHint": "snacks box"
+    },
+    {
+      "id": "coffee-pack",
+      "description": "Wholesale pack of coffee beans",
+      "imageUrl": "https://picsum.photos/seed/coffee/400/400",
+      "imageHint": "coffee"
+    }
+  ]
+}

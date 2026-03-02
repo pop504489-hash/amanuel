@@ -1,0 +1,116 @@
+import { Product, Order } from './types';
+import { PlaceHolderImages } from './placeholder-images';
+
+export const MOCK_PRODUCTS: Product[] = [
+  {
+    id: 'p1',
+    name: 'Soft Drinks (Crate)',
+    nameAm: 'ለስላሳ መጠጦች (ክሬት)',
+    description: 'Assorted 24-bottle crate',
+    price: 450,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'soft-drinks-crate')?.imageUrl || 'https://picsum.photos/seed/soft/400/400',
+    unit: 'Crate',
+    category: 'Beverages',
+  },
+  {
+    id: 'p2',
+    name: 'Cooking Oil (5L)',
+    nameAm: 'የምግብ ዘይት (5 ሊትር)',
+    description: 'Pure vegetable oil',
+    price: 850,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'cooking-oil')?.imageUrl || 'https://picsum.photos/seed/oil/400/400',
+    unit: 'Bottle',
+    category: 'Grocery',
+  },
+  {
+    id: 'p3',
+    name: 'Long Grain Rice (25kg)',
+    nameAm: 'ረጅም ሩዝ (25 ኪሎ)',
+    description: 'Premium quality white rice',
+    price: 2400,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'rice-bag')?.imageUrl || 'https://picsum.photos/seed/rice/400/400',
+    unit: 'Bag',
+    category: 'Grains',
+  },
+  {
+    id: 'p4',
+    name: 'Wheat Flour (50kg)',
+    nameAm: 'የስንዴ ዱቄት (50 ኪሎ)',
+    description: 'All-purpose baking flour',
+    price: 3200,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'flour-bag')?.imageUrl || 'https://picsum.photos/seed/flour/400/400',
+    unit: 'Bag',
+    category: 'Grains',
+  },
+  {
+    id: 'p5',
+    name: 'Mineral Water Pack',
+    nameAm: 'የታሸገ ውሃ',
+    description: '12 x 1.5L bottles',
+    price: 180,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'bottled-water')?.imageUrl || 'https://picsum.photos/seed/water/400/400',
+    unit: 'Pack',
+    category: 'Beverages',
+  },
+  {
+    id: 'p6',
+    name: 'Mixed Snacks Box',
+    nameAm: 'የተለያዩ መክሰሶች',
+    description: 'Wholesale box of assorted chips',
+    price: 600,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'snacks-box')?.imageUrl || 'https://picsum.photos/seed/snacks/400/400',
+    unit: 'Box',
+    category: 'Snacks',
+  },
+  {
+    id: 'p7',
+    name: 'Coffee Beans (1kg)',
+    nameAm: 'ቡና (1 ኪሎ)',
+    description: 'Freshly roasted Arabica',
+    price: 950,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'coffee-pack')?.imageUrl || 'https://picsum.photos/seed/coffee/400/400',
+    unit: 'Pack',
+    category: 'Beverages',
+  },
+  {
+    id: 'p8',
+    name: 'Laundry Detergent',
+    nameAm: 'የልብስ ሳሙና',
+    description: 'Bulk 10kg detergent powder',
+    price: 1100,
+    imageUrl: PlaceHolderImages.find(img => img.id === 'cleaning-supplies')?.imageUrl || 'https://picsum.photos/seed/soap/400/400',
+    unit: 'Bag',
+    category: 'Cleaning',
+  },
+];
+
+export const MOCK_ORDERS: Order[] = [
+  {
+    id: 'ORD-001',
+    date: '2023-10-25',
+    items: [
+      { productId: 'p1', productName: 'Soft Drinks (Crate)', quantity: 2, price: 450 },
+      { productId: 'p2', productName: 'Cooking Oil (5L)', quantity: 1, price: 850 },
+    ],
+    total: 1750,
+    status: 'Delivered',
+  },
+  {
+    id: 'ORD-002',
+    date: '2023-11-01',
+    items: [
+      { productId: 'p3', productName: 'Long Grain Rice (25kg)', quantity: 3, price: 2400 },
+    ],
+    total: 7200,
+    status: 'Pending',
+  },
+  {
+    id: 'ORD-003',
+    date: '2023-11-05',
+    items: [
+      { productId: 'p5', productName: 'Mineral Water Pack', quantity: 5, price: 180 },
+    ],
+    total: 900,
+    status: 'Out for Delivery',
+  },
+];
