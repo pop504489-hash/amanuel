@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/app/components/Header';
 import { ProductCard } from '@/app/components/ProductCard';
 import { OrderHistory } from '@/app/components/OrderHistory';
 import { AIInsights } from '@/app/components/AIInsights';
 import { AdminPanel } from '@/app/components/AdminPanel';
 import { CartSidebar } from '@/app/components/CartSidebar';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Language, CartItem, Order, translations, Product } from '@/app/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -21,19 +21,29 @@ export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { toast } = useToast();
   
-  // Fix: useFirestore returns the instance directly, do not destructure
   const firestore = useFirestore();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const t = translations[language];
 
-  // 1. Fetch Real Products from Firestore
+  // 1. Handle Automatic Anonymous Auth
+  useEffect(() => {
+    if (!isUserLoading && !user && auth) {
+      console.log('No user detected, initiating anonymous sign-in...');
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+
+  // 2. Fetch Real Products from Firestore (Only when user is authenticated)
   const productsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    // Crucial: Wait for both firestore and user to be ready to avoid permission errors
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'products'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);
 
-  // 2. Cart Logic
+  // 3. Cart Logic
   const updateQuantity = (productId: string, delta: number) => {
     setCart(prev => {
       const existing = prev.find(item => item.productId === productId);
@@ -108,7 +118,7 @@ export default function Home() {
           </TabsList>
 
           <TabsContent value="shop" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
-            {productsLoading ? (
+            {productsLoading || isUserLoading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="font-bold">Syncing with warehouse...</p>
