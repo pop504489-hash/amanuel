@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import { Language, CartItem, Order, translations, Product } from '@/app/lib/type
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
-import { LayoutGrid, ClipboardList, Sparkles, ShieldCheck, Loader2, Bot } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Sparkles, ShieldCheck, Loader2, Bot, ShoppingBag } from 'lucide-react';
 
 export default function Home() {
   const [language, setLanguage] = useState<Language>('am');
@@ -78,7 +79,7 @@ export default function Home() {
   const handleCheckout = () => {
     toast({ 
       title: language === 'en' ? "Order Submitted" : "ትዕዛዝ ተልኳል", 
-      description: language === 'en' ? "The warehouse is reviewing your request." : "ትዕዛዝዎን እያዘጋጀን ነው።" 
+      description: language === 'en' ? "The warehouse is reviewing your request." : "ትዕዛዝዎ በትክክል ደርሶናል!" 
     });
     setCart([]);
     setIsCartOpen(false);
@@ -151,6 +152,21 @@ export default function Home() {
               >
                 <LayoutGrid className="h-6 w-6" />
                 <span className="text-[10px] font-black uppercase tracking-tighter">{t.shop}</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="cart" 
+                onClick={() => setIsCartOpen(true)}
+                className="flex-1 flex flex-col gap-1 rounded-2xl h-16 transition-all duration-300 relative"
+              >
+                <div className="relative">
+                  <ShoppingBag className="h-6 w-6" />
+                  {totalItemsInCart > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center p-0 bg-secondary text-secondary-foreground border-2 border-background">
+                      {totalItemsInCart}
+                    </Badge>
+                  )}
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-tighter">{t.checkout}</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="assistant" 
