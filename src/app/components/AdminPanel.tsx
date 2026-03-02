@@ -40,7 +40,6 @@ export function AdminPanel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!name || !price || !file) {
       toast({ 
         title: "Missing Information / መረጃ ጎድሏል", 
@@ -55,13 +54,13 @@ export function AdminPanel() {
     setIsUploading(true);
     
     try {
-      // 1. Upload Image to Cloudinary (No Firebase Storage used)
+      // 1. Upload Image to Cloudinary (Bypassing Firebase Storage)
       const imageUrl = await uploadToCloudinary(file);
 
-      // 2. Construct Product Data
+      // 2. Prepare Product Data for Firestore
       const productData = {
         name,
-        nameAm: nameAm || name, // Fallback to English if Amharic is empty
+        nameAm: nameAm || name,
         price: parseFloat(price),
         category,
         unit,
@@ -72,17 +71,17 @@ export function AdminPanel() {
         description: `${name} in ${category}`,
       };
 
-      // 3. Save to Firestore (Non-blocking as per guidelines)
+      // 3. Save to Firestore (Non-blocking update)
       const productsRef = collection(firestore, 'products');
       addDocumentNonBlocking(productsRef, productData);
 
-      // 4. Success UI
+      // 4. Success feedback
       toast({ 
         title: "Success! / ተሳክቷል!", 
         description: `${name} has been added to the catalog.`,
       });
 
-      // 5. Reset Form
+      // 5. Reset form state
       setName('');
       setNameAm('');
       setPrice('');
@@ -113,7 +112,7 @@ export function AdminPanel() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="name" className="font-bold">Product Name (EN)</Label>
+                <Label htmlFor="name" className="font-bold">Product Name (EN) / የምርት ስም</Label>
                 <Input 
                   id="name" 
                   value={name} 
@@ -236,7 +235,7 @@ export function AdminPanel() {
               {isUploading ? (
                 <>
                   <Loader2 className="h-6 w-6 animate-spin" />
-                  Processing... / በመጫን ላይ...
+                  Posting... / በመጫን ላይ...
                 </>
               ) : (
                 <>
@@ -250,7 +249,7 @@ export function AdminPanel() {
       </Card>
       
       <p className="text-center text-xs text-muted-foreground mt-4 font-medium uppercase tracking-widest">
-        Secure Admin Access Only / ለአስተዳዳሪ ብቻ
+        Secure Admin Access / የአስተዳዳሪ መግቢያ
       </p>
     </div>
   );
