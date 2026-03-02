@@ -1,26 +1,31 @@
+
 'use client';
 
 import { useState } from 'react';
-import { useFirestore, useAuth } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp, query, orderBy, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { uploadToCloudinary } from '@/app/lib/cloudinary';
+import { Order, OrderStatus } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, UploadCloud, XCircle, CheckCircle2, LogOut } from 'lucide-react';
+import { Loader2, PackagePlus, UploadCloud, XCircle, CheckCircle2, LogOut, ClipboardList, Phone, MapPin, User, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { signOut } from 'firebase/auth';
+import { format } from 'date-fns';
 
 export function AdminPanel() {
+  const [activeTab, setActiveTab] = useState('orders');
   const [name, setName] = useState('');
   const [nameAm, setNameAm] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Beverages');
-  const [unit, setUnit] = useState('Piece');
+  const [unit, setUnit] = useState('Crate');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -28,6 +33,13 @@ export function AdminPanel() {
   const firestore = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
+
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: orders, isLoading: ordersLoading } = useCollection<Order>(ordersQuery);
 
   const handleLogout = () => {
     signOut(auth);
@@ -46,30 +58,16 @@ export function AdminPanel() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!name || !price || !file) {
-      toast({ 
-        title: "Missing Information / መረጃ ጎድሏል", 
-        description: "Please provide a name, price, and a product photo.", 
-        variant: "destructive" 
-      });
+      toast({ title: "Error", description: "All fields are required.", variant: "destructive" });
       return;
     }
 
-    if (!firestore) {
-      toast({
-        title: "Database Error",
-        description: "System is still connecting to the database.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+    if (!firestore) return;
     setIsUploading(true);
     
     try {
       const imageUrl = await uploadToCloudinary(file);
-      
       const productData = {
         name,
         nameAm: nameAm || name,
@@ -83,194 +81,163 @@ export function AdminPanel() {
         description: `${name} in ${category}`,
       };
 
-      const productsRef = collection(firestore, 'products');
-      addDocumentNonBlocking(productsRef, productData);
-
-      toast({ 
-        title: "Success! / ተሳክቷል!", 
-        description: `${name} has been added to the catalog.`,
-      });
-
-      setName('');
-      setNameAm('');
-      setPrice('');
-      setFile(null);
-      setPreview(null);
-      
+      addDocumentNonBlocking(collection(firestore, 'products'), productData);
+      toast({ title: "Success", description: "Product added." });
+      setName(''); setNameAm(''); setPrice(''); setFile(null); setPreview(null);
     } catch (error: any) {
-      toast({ 
-        title: "Upload Error / ስህተት ተከስቷል", 
-        description: error.message || "Failed to post product.", 
-        variant: "destructive" 
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
   };
 
+  const markAsDelivered = (orderId: string) => {
+    if (!firestore) return;
+    updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: 'Delivered' });
+    toast({ title: "Order Updated", description: "Marked as Delivered." });
+  };
+
   return (
-    <div className="max-w-2xl mx-auto py-4 space-y-4">
-      <div className="flex justify-end">
-        <Button 
-          variant="outline" 
-          onClick={handleLogout}
-          className="rounded-full gap-2 text-destructive border-destructive hover:bg-destructive/10"
-        >
-          <LogOut className="h-4 w-4" />
-          Logout / ውጣ
+    <div className="max-w-4xl mx-auto py-4 space-y-4 px-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-black text-primary">Admin Console</h2>
+        <Button variant="ghost" onClick={handleLogout} className="text-destructive gap-2">
+          <LogOut className="h-4 w-4" /> Logout
         </Button>
       </div>
 
-      <Card className="border-2 shadow-xl overflow-hidden rounded-3xl">
-        <CardHeader className="bg-primary text-primary-foreground p-6">
-          <CardTitle className="flex items-center gap-2 text-2xl font-black">
-            <PackagePlus className="h-7 w-7" />
-            Post New Product / አዲስ ምርት ይጨምሩ
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="font-bold">Product Name (EN) / የምርት ስም</Label>
-                <Input 
-                  id="name" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  placeholder="e.g. Coca Cola 500ml" 
-                  className="rounded-xl h-12" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nameAm" className="font-bold">የምርት ስም (በአማርኛ)</Label>
-                <Input 
-                  id="nameAm" 
-                  value={nameAm} 
-                  onChange={(e) => setNameAm(e.target.value)} 
-                  placeholder="ለምሳሌ ኮካ ኮላ 500ml" 
-                  className="rounded-xl h-12" 
-                />
-              </div>
-            </div>
+      <Tabs defaultValue="orders" onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 rounded-2xl h-14 p-1">
+          <TabsTrigger value="orders" className="rounded-xl font-bold gap-2">
+            <ClipboardList className="h-4 w-4" /> View Orders
+          </TabsTrigger>
+          <TabsTrigger value="post" className="rounded-xl font-bold gap-2">
+            <PackagePlus className="h-4 w-4" /> Add Product
+          </TabsTrigger>
+        </TabsList>
 
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="price" className="font-bold">Price (ETB) / ዋጋ</Label>
-                <Input 
-                  id="price" 
-                  type="number" 
-                  step="0.01"
-                  value={price} 
-                  onChange={(e) => setPrice(e.target.value)} 
-                  placeholder="0.00" 
-                  className="rounded-xl h-12 text-lg font-mono" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="unit" className="font-bold">Unit / መጠን</Label>
-                <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Piece">Piece (ፍሬ)</SelectItem>
-                    <SelectItem value="Crate">Crate (ክሬት)</SelectItem>
-                    <SelectItem value="Box">Box (ሳጥን)</SelectItem>
-                    <SelectItem value="Pack">Pack (ጥቅል)</SelectItem>
-                    <SelectItem value="Bag">Bag (ጆንያ)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category" className="font-bold">Category / ምድብ</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="rounded-xl h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Beverages">Beverages (መጠጦች)</SelectItem>
-                  <SelectItem value="Grocery">Grocery (ግሮሰሪ)</SelectItem>
-                  <SelectItem value="Grains">Grains (ጥራጥሬዎች)</SelectItem>
-                  <SelectItem value="Cleaning">Cleaning (የጽዳት እቃዎች)</SelectItem>
-                  <SelectItem value="Snacks">Snacks (መክሰስ)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="font-bold">Product Photo / የምርት ፎቶ</Label>
-              <div className="relative group">
-                <div 
-                  className={`flex flex-col items-center justify-center border-4 border-dashed rounded-3xl p-8 transition-all cursor-pointer bg-muted/20 hover:bg-muted/40 ${preview ? 'border-primary/50' : 'border-muted-foreground/20'}`}
-                  onClick={() => document.getElementById('image-upload')?.click()}
-                >
-                  {preview ? (
-                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-inner">
-                      <Image src={preview} alt="Preview" fill className="object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <UploadCloud className="h-10 w-10 text-white" />
+        <TabsContent value="orders" className="space-y-4 mt-6">
+          {ordersLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+          ) : orders && orders.length > 0 ? (
+            <div className="grid gap-6">
+              {orders.map((order) => (
+                <Card key={order.id} className="border-2 rounded-3xl overflow-hidden shadow-lg">
+                  <div className={`h-2 w-full ${order.status === 'Delivered' ? 'bg-green-500' : 'bg-orange-500'}`} />
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 font-black text-lg">
+                          <User className="h-4 w-4 text-primary" /> {order.customerName}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" /> {order.location}
+                        </div>
+                        <a href={`tel:${order.phoneNumber}`} className="flex items-center gap-2 text-sm text-primary font-bold hover:underline">
+                          <Phone className="h-4 w-4" /> {order.phoneNumber}
+                        </a>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground uppercase font-black">
+                          {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'MMM dd, HH:mm') : 'Recently'}
+                        </div>
+                        <div className="text-xl font-black text-primary">ETB {order.total}</div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                      <div className="bg-primary/10 p-4 rounded-full">
-                        <UploadCloud className="h-10 w-10 text-primary" />
-                      </div>
-                      <p className="font-bold">Click to upload photo / ፎቶ ለመጫን እዚህ ይጫኑ</p>
+
+                    <div className="bg-muted/30 p-4 rounded-2xl space-y-2">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-sm font-medium">
+                          <span>{item.quantity}x {item.productName}</span>
+                          <span className="text-muted-foreground">ETB {item.price * item.quantity}</span>
+                        </div>
+                      ))}
                     </div>
-                  )}
+
+                    <div className="flex items-center justify-between pt-2">
+                      <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest ${order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        {order.status}
+                      </div>
+                      {order.status !== 'Delivered' && (
+                        <Button onClick={() => markAsDelivered(order.id)} className="bg-green-600 hover:bg-green-700 rounded-xl gap-2 font-bold shadow-lg shadow-green-200">
+                          <CheckCircle className="h-4 w-4" /> ተረክቧል (Mark Delivered)
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-muted/20 rounded-3xl border-4 border-dashed">
+              <ClipboardList className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-muted-foreground font-bold">No orders found yet.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="post" className="mt-6">
+          <Card className="border-2 shadow-xl overflow-hidden rounded-3xl">
+            <CardHeader className="bg-primary text-primary-foreground p-6">
+              <CardTitle className="flex items-center gap-2 text-2xl font-black">
+                <PackagePlus className="h-7 w-7" /> Post New Product
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold">Name (EN) / ስም</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Coca Cola" className="rounded-xl h-12" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Name (AM) / ስም (አማርኛ)</Label>
+                    <Input value={nameAm} onChange={(e) => setNameAm(e.target.value)} placeholder="ለምሳሌ ኮካ ኮላ" className="rounded-xl h-12" />
+                  </div>
                 </div>
-                <input 
-                  id="image-upload" 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleFileChange} 
-                  className="hidden" 
-                />
-                {preview && (
-                  <Button 
-                    type="button" 
-                    variant="destructive" 
-                    size="icon" 
-                    className="absolute -top-2 -right-2 rounded-full h-8 w-8 shadow-lg"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreview(null);
-                      setFile(null);
-                    }}
-                  >
-                    <XCircle className="h-5 w-5" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full h-16 rounded-2xl text-xl font-black gap-3 shadow-xl shadow-primary/20 hover:scale-[1.01] transition-transform active:scale-[0.98]"
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  Posting... / በመጫን ላይ...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-6 w-6" />
-                  Post Product / ምርቱን ይጫኑ
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-      
-      <p className="text-center text-xs text-muted-foreground mt-4 font-medium uppercase tracking-widest">
-        Secure Admin Access / የአስተዳዳሪ መግቢያ
-      </p>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold">Price (ETB) / ዋጋ</Label>
+                    <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" className="rounded-xl h-12" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Unit / መጠን</Label>
+                    <Select value={unit} onValueChange={setUnit}>
+                      <SelectTrigger className="rounded-xl h-12"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Crate">Crate (ክሬት)</SelectItem>
+                        <SelectItem value="Box">Box (ሳጥን)</SelectItem>
+                        <SelectItem value="Piece">Piece (ፍሬ)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-bold">Category / ምድብ</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="rounded-xl h-12"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Beverages">Beverages</SelectItem>
+                      <SelectItem value="Grocery">Grocery</SelectItem>
+                      <SelectItem value="Grains">Grains</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-3">
+                  <Label className="font-bold">Photo / ፎቶ</Label>
+                  <div className="flex flex-col items-center justify-center border-4 border-dashed rounded-3xl p-8 bg-muted/20 cursor-pointer" onClick={() => document.getElementById('image-upload')?.click()}>
+                    {preview ? <div className="relative w-full aspect-video rounded-2xl overflow-hidden"><Image src={preview} alt="Preview" fill className="object-cover" /></div> : <UploadCloud className="h-10 w-10 text-primary" />}
+                    <input id="image-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full h-16 rounded-2xl text-xl font-black gap-3" disabled={isUploading}>
+                  {isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <CheckCircle2 className="h-6 w-6" />} Post Product
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

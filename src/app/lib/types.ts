@@ -19,7 +19,9 @@ export type OrderStatus = 'Pending' | 'Out for Delivery' | 'Delivered';
 
 export type Order = {
   id: string;
-  date: string;
+  customerName: string;
+  phoneNumber: string;
+  location: string;
   items: {
     productId: string;
     productName: string;
@@ -28,6 +30,7 @@ export type Order = {
   }[];
   total: number;
   status: OrderStatus;
+  createdAt: any;
 };
 
 export type Language = 'en' | 'am';
@@ -48,6 +51,9 @@ export interface Translation {
   aiChatPlaceholder: string;
   aiChatWelcome: string;
   admin: string;
+  fullName: string;
+  phoneNumber: string;
+  location: string;
 }
 
 export const translations: Record<Language, Translation> = {
@@ -67,6 +73,9 @@ export const translations: Record<Language, Translation> = {
     aiChatPlaceholder: 'e.g. "I want 3 crates of water"',
     aiChatWelcome: 'Hello! Tell me what you need, and I will add it to your cart.',
     admin: 'Admin',
+    fullName: 'Full Name',
+    phoneNumber: 'Phone Number',
+    location: 'Shop Name / Location',
   },
   am: {
     shop: 'ምርቶች',
@@ -84,5 +93,8 @@ export const translations: Record<Language, Translation> = {
     aiChatPlaceholder: 'ለምሳሌ "3 የታሸገ ውሃ እፈልጋለሁ"',
     aiChatWelcome: 'ሰላም! የሚፈልጉትን ይንገሩኝ፣ እኔ ወደ ጋሪዎ እጨምራለሁ።',
     admin: 'አስተዳዳሪ',
+    fullName: 'ሙሉ ስም',
+    phoneNumber: 'ስልክ ቁጥር',
+    location: 'የሱቅ ስም ወይም ቦታ',
   },
 };

@@ -10,13 +10,14 @@ import { AdminPanel } from '@/app/components/AdminPanel';
 import { LoginForm } from '@/app/components/LoginForm';
 import { CartSidebar } from '@/app/components/CartSidebar';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useAuth, initiateAnonymousSignIn } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Language, CartItem, Order, translations, Product } from '@/app/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { LayoutGrid, ClipboardList, Sparkles, ShieldCheck, Loader2, Bot, ShoppingBag } from 'lucide-react';
+import { LayoutGrid, ClipboardList, ShieldCheck, Loader2, Bot, ShoppingBag } from 'lucide-react';
 
 export default function Home() {
   const [language, setLanguage] = useState<Language>('am');
@@ -77,11 +78,36 @@ export default function Home() {
     }
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = (details: { customerName: string; phoneNumber: string; location: string }) => {
+    if (!firestore) return;
+
+    const orderItems = cart.map(item => {
+      const p = products?.find(prod => prod.id === item.productId);
+      return {
+        productId: item.productId,
+        productName: p?.name || 'Unknown',
+        quantity: item.quantity,
+        price: p?.price || 0
+      };
+    });
+
+    const total = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    const orderData = {
+      ...details,
+      items: orderItems,
+      total,
+      status: 'Pending',
+      createdAt: serverTimestamp(),
+    };
+
+    addDocumentNonBlocking(collection(firestore, 'orders'), orderData);
+
     toast({ 
       title: language === 'en' ? "Order Submitted" : "ትዕዛዝ ተልኳል", 
-      description: language === 'en' ? "The warehouse is reviewing your request." : "ትዕዛዝዎ በትክክል ደርሶናል!" 
+      description: language === 'en' ? "Success! ትዕዛዝዎ በትክክል ደርሶናል!" : "ተሳክቷል! ትዕዛዝዎ በትክክል ደርሶናል!" 
     });
+    
     setCart([]);
     setIsCartOpen(false);
   };
@@ -144,21 +170,13 @@ export default function Home() {
             {isAdmin ? <AdminPanel /> : <LoginForm />}
           </TabsContent>
 
-          {/* Fixed Bottom Navigation for Mobile */}
           <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-2xl border-t border-primary/10 px-4 pb-safe">
             <TabsList className="flex h-20 bg-transparent p-0 w-full max-w-lg mx-auto gap-1">
-              <TabsTrigger 
-                value="shop" 
-                className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-primary/30 transition-all duration-300"
-              >
+              <TabsTrigger value="shop" className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <LayoutGrid className="h-6 w-6" />
                 <span className="text-[10px] font-black uppercase tracking-tighter">{t.shop}</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="cart" 
-                onClick={() => setIsCartOpen(true)}
-                className="flex-1 flex flex-col gap-1 rounded-2xl h-16 transition-all duration-300 relative"
-              >
+              <TabsTrigger value="cart" onClick={() => setIsCartOpen(true)} className="flex-1 flex flex-col gap-1 rounded-2xl h-16 relative">
                 <div className="relative">
                   <ShoppingBag className="h-6 w-6" />
                   {totalItemsInCart > 0 && (
@@ -169,27 +187,15 @@ export default function Home() {
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-tighter">{t.checkout}</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="assistant" 
-                className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground data-[state=active]:shadow-xl data-[state=active]:shadow-secondary/30 transition-all duration-300"
-              >
-                <div className="relative">
-                  <Bot className="h-6 w-6" />
-                  <div className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-destructive rounded-full border-2 border-background" />
-                </div>
+              <TabsTrigger value="assistant" className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">
+                <Bot className="h-6 w-6" />
                 <span className="text-[10px] font-black uppercase tracking-tighter">{t.assistant}</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="orders" 
-                className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-primary/30 transition-all duration-300"
-              >
+              <TabsTrigger value="orders" className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <ClipboardList className="h-6 w-6" />
                 <span className="text-[10px] font-black uppercase tracking-tighter">{t.orders}</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="admin" 
-                className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-primary/30 transition-all duration-300"
-              >
+              <TabsTrigger value="admin" className="flex-1 flex flex-col gap-1 rounded-2xl h-16 data-[state=active]:bg-primary data-[state=active]:text-white">
                 <ShieldCheck className="h-6 w-6" />
                 <span className="text-[10px] font-black uppercase tracking-tighter">{t.admin}</span>
               </TabsTrigger>
