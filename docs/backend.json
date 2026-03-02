@@ -1,103 +1,10 @@
 {
   "entities": {
-    "AdminUser": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AdminUser",
-      "type": "object",
-      "description": "Represents an administrative user with access to the private admin panel to manage products and orders.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the AdminUser entity."
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address of the admin user, used for login.",
-          "format": "email"
-        },
-        "name": {
-          "type": "string",
-          "description": "Full name of the admin user."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the admin user record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the admin user record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "email",
-        "name",
-        "createdAt"
-      ]
-    },
-    "Shop": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Shop",
-      "type": "object",
-      "description": "Represents a local neighborhood shop (kiosk) that places orders for inventory.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Shop entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the shop (e.g., 'Meklit Kiosk')."
-        },
-        "contactPerson": {
-          "type": "string",
-          "description": "Name of the primary contact person for the shop."
-        },
-        "email": {
-          "type": "string",
-          "description": "Contact email address for the shop.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "Contact phone number for the shop."
-        },
-        "address": {
-          "type": "string",
-          "description": "Full physical address of the shop."
-        },
-        "languagePreference": {
-          "type": "string",
-          "description": "Preferred language for the shop's user interface (e.g., 'en' for English, 'am' for Amharic)."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the shop record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the shop record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "contactPerson",
-        "email",
-        "phone",
-        "address",
-        "createdAt"
-      ]
-    },
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents an inventory item available for order by shops.",
+      "description": "Represents a single product available for order in the catalog.",
       "properties": {
         "id": {
           "type": "string",
@@ -105,52 +12,103 @@
         },
         "name": {
           "type": "string",
-          "description": "Name of the product (e.g., 'Coca-Cola Can', 'Packet of Chips')."
+          "description": "The name of the product."
         },
         "description": {
           "type": "string",
           "description": "A detailed description of the product."
         },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL to the high-quality image of the product, stored in Firebase Storage.",
-          "format": "uri"
+        "price": {
+          "type": "number",
+          "description": "The current selling price of the product."
         },
         "category": {
           "type": "string",
-          "description": "Category to which the product belongs (e.g., 'Soft Drinks', 'Snacks', 'Confectionery')."
+          "description": "The category the product belongs to (e.g., 'Soft Drinks', 'Snacks', 'Dairy')."
         },
-        "price": {
-          "type": "number",
-          "description": "The price of one unit of the product."
+        "imageUrl": {
+          "type": "string",
+          "description": "The URL to a high-quality image of the product.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current availability status of the product (e.g., 'Available', 'Out of Stock', 'Discontinued')."
         },
         "unitOfMeasure": {
           "type": "string",
-          "description": "The unit in which the product is sold (e.g., 'can', 'crate', 'bottle', 'packet')."
-        },
-        "stockStatus": {
-          "type": "string",
-          "description": "Current availability status of the product (e.g., 'In-Stock', 'Out-of-Stock')."
+          "description": "The unit in which the product is typically ordered or measured (e.g., 'crate', 'bottle', 'piece')."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the product record was created.",
+          "description": "Timestamp when the product was added to the catalog.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp when the product record was last updated.",
+          "description": "Timestamp when the product information was last updated.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
         "name",
-        "imageUrl",
-        "category",
         "price",
+        "category",
+        "imageUrl",
+        "status",
         "unitOfMeasure",
-        "stockStatus",
+        "createdAt"
+      ]
+    },
+    "ShopProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ShopProfile",
+      "type": "object",
+      "description": "Represents a local neighborhood shop (kiosk) that places orders.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ShopProfile entity, typically linked to an external authentication system's user ID."
+        },
+        "name": {
+          "type": "string",
+          "description": "The legal or common name of the shop."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "The primary contact email for the shop.",
+          "format": "email"
+        },
+        "contactPhone": {
+          "type": "string",
+          "description": "The primary contact phone number for the shop."
+        },
+        "address": {
+          "type": "string",
+          "description": "The full physical address of the shop for deliveries."
+        },
+        "languagePreference": {
+          "type": "string",
+          "description": "The preferred language for the shop's user interface (e.g., 'en' for English, 'am' for Amharic)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the shop profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the shop profile information was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "contactEmail",
+        "address",
+        "languagePreference",
         "createdAt"
       ]
     },
@@ -158,7 +116,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Order",
       "type": "object",
-      "description": "Represents an order placed by a shop for a collection of products.",
+      "description": "Represents a customer order placed by a shop.",
       "properties": {
         "id": {
           "type": "string",
@@ -166,55 +124,62 @@
         },
         "shopId": {
           "type": "string",
-          "description": "Reference to the Shop that placed this order. (Relationship: Shop 1:N Order)"
+          "description": "Reference to the ShopProfile that placed this order. (Relationship: ShopProfile 1:N Order)"
+        },
+        "orderItemIds": {
+          "type": "array",
+          "description": "An array of unique identifiers for the individual items included in this order. (Relationship: Order 1:N OrderItem)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "The total monetary value of the order, including all items."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the order (e.g., 'Pending', 'Confirmed', 'Out for Delivery', 'Delivered', 'Cancelled')."
         },
         "orderDate": {
           "type": "string",
           "description": "Timestamp when the order was placed.",
           "format": "date-time"
         },
-        "status": {
-          "type": "string",
-          "description": "Current status of the order (e.g., 'Pending', 'Processing', 'Out for Delivery', 'Delivered', 'Cancelled')."
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The total monetary value of all items in the order."
-        },
         "deliveryAddress": {
           "type": "string",
-          "description": "The address where the order is to be delivered. Defaults to the shop's address."
+          "description": "The delivery address for this specific order, copied from the shop's profile at the time of order placement for historical accuracy."
         },
         "notes": {
           "type": "string",
-          "description": "Any special instructions or notes provided by the shop owner for this order."
+          "description": "Any additional notes or special instructions for the order or delivery."
         },
-        "createdAt": {
+        "estimatedDeliveryDate": {
           "type": "string",
-          "description": "Timestamp when the order record was created.",
+          "description": "The estimated date and time for the order delivery.",
           "format": "date-time"
         },
-        "updatedAt": {
+        "actualDeliveryDate": {
           "type": "string",
-          "description": "Timestamp when the order record was last updated.",
+          "description": "The actual date and time when the order was delivered.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
         "shopId",
-        "orderDate",
-        "status",
+        "orderItemIds",
         "totalAmount",
-        "deliveryAddress",
-        "createdAt"
+        "status",
+        "orderDate",
+        "deliveryAddress"
       ]
     },
     "OrderItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "OrderItem",
       "type": "object",
-      "description": "Represents a single product line item within an order, capturing its state at the time of order.",
+      "description": "Represents a single line item within an order, detailing a specific product and its quantity.",
       "properties": {
         "id": {
           "type": "string",
@@ -226,38 +191,38 @@
         },
         "productId": {
           "type": "string",
-          "description": "Reference to the Product being ordered. (Relationship: Product 1:1 OrderItem)"
+          "description": "Reference to the Product being ordered. (Relationship: Product 1:N OrderItem)"
+        },
+        "productName": {
+          "type": "string",
+          "description": "The name of the product at the time of order, denormalized for historical record keeping."
+        },
+        "productImageUrl": {
+          "type": "string",
+          "description": "The URL to the product image at the time of order, denormalized for historical record keeping.",
+          "format": "uri"
         },
         "quantity": {
           "type": "number",
-          "description": "The number of units of the product ordered."
+          "description": "The quantity of the product ordered."
         },
         "pricePerUnit": {
           "type": "number",
-          "description": "The price of the product unit at the time the order was placed."
+          "description": "The price of a single unit of the product at the time the order was placed."
         },
         "subtotal": {
           "type": "number",
-          "description": "The calculated total for this specific line item (quantity * pricePerUnit)."
-        },
-        "productNameSnapshot": {
-          "type": "string",
-          "description": "A snapshot of the product name at the time of order, for historical record keeping."
-        },
-        "productImageUrlSnapshot": {
-          "type": "string",
-          "description": "A snapshot of the product image URL at the time of order, for historical record keeping.",
-          "format": "uri"
+          "description": "The calculated subtotal for this order item (quantity * pricePerUnit)."
         }
       },
       "required": [
         "id",
         "orderId",
         "productId",
+        "productName",
         "quantity",
         "pricePerUnit",
-        "subtotal",
-        "productNameSnapshot"
+        "subtotal"
       ]
     }
   },
@@ -270,98 +235,92 @@
   "firestore": {
     "structure": [
       {
-        "path": "/admin_users/{adminId}",
-        "definition": {
-          "entityName": "AdminUser",
-          "schema": {
-            "$ref": "#/backend/entities/AdminUser"
-          },
-          "description": "Stores the profile of the single administrative user. 'adminId' will be the specific Firebase UID of the platform owner, granting read/write access only to that UID. This collection adheres to the DBAC principle, explicitly defining who has admin privileges through document existence.",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "The Firebase User ID (UID) of the platform's administrator."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/shops/{shopId}",
-        "definition": {
-          "entityName": "Shop",
-          "schema": {
-            "$ref": "#/backend/entities/Shop"
-          },
-          "description": "Stores profile information for each shop owner. 'shopId' will correspond to the 'request.auth.uid' of the authenticated shop owner. Only the respective shop owner and the global admin can read/write their own shop profile.",
-          "params": [
-            {
-              "name": "shopId",
-              "description": "The Firebase User ID (UID) of the authenticated shop owner."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/products/{productId}",
+        "path": "/products",
         "definition": {
           "entityName": "Product",
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores details of all available products. Products are globally readable by all authenticated shop users and the admin. Only the global admin has write access. This collection enables QAPs for product listings as all documents share the same public-read, admin-write security posture.",
+          "description": "Stores the global catalog of all available products. Read access is public for authenticated users (shops), write access is restricted to administrators. Documents in this collection include 'status' for explicit state modeling."
+        }
+      },
+      {
+        "path": "/users/{userId}/profile",
+        "definition": {
+          "entityName": "ShopProfile",
+          "schema": {
+            "$ref": "#/backend/entities/ShopProfile"
+          },
+          "description": "Stores the profile information for a specific shop. Access is strictly limited to the authenticated user matching the '{userId}'. This follows a path-based ownership model for Authorization Independence.",
           "params": [
             {
-              "name": "productId",
-              "description": "A unique identifier for a product."
+              "name": "userId",
+              "description": "The unique identifier of the authenticated user (shop owner), matching request.auth.uid."
             }
           ]
         }
       },
       {
-        "path": "/shops/{shopId}/orders/{orderId}",
+        "path": "/users/{userId}/orders/{orderId}",
         "definition": {
           "entityName": "Order",
           "schema": {
             "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores orders placed by a specific shop. Only the corresponding 'shopId' (shop owner) and the global admin can read/write orders in their respective subcollection. 'shopId' is denormalized in the path and also explicitly in the document ('shopId' field) for robustness and easier Collection Group Queries if needed with additional filtering. This structure provides Authorization Independence for orders, as rules can directly compare 'shopId' from the path/document with 'request.auth.uid'.",
+          "description": "Stores individual orders placed by a specific shop. Access is strictly limited to the authenticated user matching the '{userId}' in the path. Includes denormalized 'shopId' for robust authorization checks and 'deliveryAddress' for historical accuracy.",
           "params": [
             {
-              "name": "shopId",
-              "description": "The Firebase User ID (UID) of the shop owner who placed the order."
+              "name": "userId",
+              "description": "The unique identifier of the authenticated user (shop owner) who placed the order, matching request.auth.uid."
             },
             {
               "name": "orderId",
-              "description": "A unique identifier for an order."
+              "description": "The unique identifier for a specific order."
             }
           ]
         }
       },
       {
-        "path": "/shops/{shopId}/orders/{orderId}/order_items/{orderItemId}",
+        "path": "/users/{userId}/orders/{orderId}/orderItems/{orderItemId}",
         "definition": {
           "entityName": "OrderItem",
           "schema": {
             "$ref": "#/backend/entities/OrderItem"
           },
-          "description": "Stores individual line items for an order. Authorization is inherited from the parent 'Order' document. The 'shopId' and 'orderId' are implicitly available through the path. No additional denormalization for authorization needed in the document itself as the path segments provide the context. Only the respective shop owner (through their order) and the global admin can read these items.",
+          "description": "Stores the line items belonging to a specific order. Access is strictly limited to the authenticated user matching the parent '{userId}'. Includes denormalized 'productName' and 'productImageUrl' for historical data integrity.",
           "params": [
             {
-              "name": "shopId",
-              "description": "The Firebase User ID (UID) of the shop owner associated with the parent order."
+              "name": "userId",
+              "description": "The unique identifier of the authenticated user (shop owner) of the parent order."
             },
             {
               "name": "orderId",
-              "description": "A unique identifier for the parent order."
+              "description": "The unique identifier of the parent order."
             },
             {
               "name": "orderItemId",
-              "description": "A unique identifier for an individual item within an order."
+              "description": "The unique identifier for a specific item within an order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/ShopProfile"
+          },
+          "description": "This collection signifies administrative roles. The mere existence of a document with the '{userId}' as the ID grants administrative privileges. Used for Database Access Control (DBAC) and Authorization Independence to grant write access to products and other admin-specific functions.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user (shop owner) designated as an administrator."
             }
           ]
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure is designed to strictly adhere to the core design principles of Authorization Independence, Structural Segregation, and clear Access Modeling, ensuring a secure, scalable, and debuggable B2B inventory platform. Authorization Independence is achieved primarily by making all necessary authorization context available directly within the document being accessed or its path segments, eliminating the need for `get()` operations in security rules.\n\nFor `AdminUser` profiles, the `/admin_users/{adminId}` collection uses a path-based ownership model where `adminId` is the Firebase UID of the single designated administrator. Authorization rules will simply check `request.auth.uid == adminId`, fulfilling the DBAC (Database-Backed Access Control) principle through document existence.\n\n`Shop` profiles are stored in `/shops/{shopId}`, where `shopId` maps directly to the authenticated shop owner's `request.auth.uid`. This provides private, path-based ownership for each shop owner, ensuring they can only access and modify their own profile data. The global administrator will have broader access to all shop profiles.\n\n`Product` data resides in the top-level `/products/{productId}` collection. This collection embodies Structural Segregation by having a uniform security posture: all documents are globally readable by any authenticated user (shops and admin) but are writable exclusively by the global administrator. This structure directly supports QAPs (Query as Authorization Predicates) for listing products, as all available products are intended to be visible to shops, and rules can easily filter based on authentication status and admin role, without needing complex `get()` calls.\n\n`Order` entities are organized hierarchically under specific shops: `/shops/{shopId}/orders/{orderId}`. This design continues the path-based ownership for orders, ensuring that a shop owner can only access their own orders (where `shopId == request.auth.uid`). Crucially, the `shopId` is denormalized within the `Order` document itself. This explicit field, alongside its presence in the path, provides robust Authorization Independence, allowing security rules to validate ownership atomically without relying on parent document fetches. For the administrator, Collection Group Queries on the 'orders' collection can efficiently retrieve all orders across all shops, with admin-specific rules granting this broad access.\n\n`OrderItem` entities are nested within orders: `/shops/{shopId}/orders/{orderId}/order_items/{orderItemId}`. Their authorization is implicitly inherited from the parent `Order` document, with the `shopId` and `orderId` readily available from the path segments. The `OrderItem` schema includes denormalized snapshots of `productNameSnapshot` and `productImageUrlSnapshot` to maintain historical accuracy, adhering to the Invariants principle. This structured hierarchy, coupled with explicit authorization context where necessary, allows for simple and highly debuggable security rules, directly addressing the core design principles."
+    "reasoning": "The proposed Firestore structure prioritizes Authorization Independence, Structural Segregation, and consistent Access Modeling to ensure robust security rules, scalability, and debuggability. \n\n**Authorization Independence (CRITICAL):**\n1.  **Products:** The `/products` collection is designed for public read access by all authenticated shops and restricted write access for administrators. Authorization for read is simple (`request.auth.uid != null`). Authorization for write is handled by checking a separate `/roles_admin/{userId}` collection. This eliminates any need for `get()` calls within product-related rules for standard shop operations. Admin authorization is a single `get()` to a dedicated role collection, which is an accepted pattern for DBAC and does not violate atomic operations for data entities.\n2.  **ShopProfile, Order, OrderItem:** For user-owned data (shops, orders, order items), a hierarchical path-based ownership model is employed: `/users/{userId}/profile`, `/users/{userId}/orders/{orderId}`, and `/users/{userId}/orders/{orderId}/orderItems/{orderItemId}`. In these structures, the `{userId}` wildcard directly corresponds to `request.auth.uid`. This design makes authorization rules explicit and simple (e.g., `allow read, write: if request.auth.uid == userId;`). This eliminates any need for `get()` calls to verify ownership, as the owner's ID is explicitly part of the document path. The `shopId` field in the `Order` document further denormalizes the owner ID, acting as an additional robust check, but the primary authorization comes from the path.\n\n**QAPs (Rules are not Filters):**\n1.  **Products:** The `/products` collection allows all authenticated shops to perform `list` operations without filtering by security rules. All available products are readable by any shop. This directly supports the Visual Catalog feature where shops browse all products.\n2.  **ShopProfile:** A shop can `get` its own profile document directly using its `userId`. No `list` operation across other shop profiles is intended or permitted, ensuring QAPs for `get` operations.\n3.  **Orders:** The `/users/{userId}/orders` collection allows a shop to `list` only their own orders by querying documents under their specific `userId` path. This perfectly supports the Order History & Status dashboard, enabling efficient and secure retrieval of a shop's orders without rules filtering results after the query.\n4.  **OrderItems:** Similarly, `/users/{userId}/orders/{orderId}/orderItems` allows a shop to `list` items for a specific order they own, again leveraging the path to ensure only relevant items are returned and no rule filtering is required.\n\n**Structural Segregation & Access Modeling:**\n*   **Global Public Data:** `/products` is segregated for global, generally public access (read for shops) with admin-only write access. All documents in this collection share the same security posture.\n*   **User-Owned Data:** `/users/{userId}/profile`, `/users/{userId}/orders/{orderId}`, and `/users/{userId}/orders/{orderId}/orderItems/{orderItemId}` clearly separate data based on explicit ownership. This makes rules intuitive and highly efficient. For example, a shop cannot accidentally or maliciously access another shop's orders.\n*   **DBAC for Admin Roles:** `/roles_admin/{userId}` is a dedicated collection for defining administrator roles. The existence of a document at this path signifies admin status, allowing for simple and clear role-based access control without custom claims. This collection has a homogeneous security posture: its purpose is solely to define admin users.\n\nThis design leverages Firestore's hierarchical nature to simplify security rules, making them highly performant and easy to debug, while fully supporting the application's core features like the Visual Catalog and Order History dashboard with secure `list` operations."
   }
 }

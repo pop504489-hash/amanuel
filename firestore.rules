@@ -3,134 +3,133 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * SIMPLE B2B INVENTORY ORDERING PLATFORM - SECURITY RULES
+     * SECURITY RULES DOCUMENTATION
      * 
-     * CORE PHILOSOPHY:
-     * This ruleset implements a dual-access model for a B2B marketplace. It separates 
-     * administrative control (managed via a dedicated admin collection) from shop-specific 
-     * commerce operations. Access is strictly governed by authenticated identity and 
-     * ownership of data paths.
-     *
-     * DATA STRUCTURE:
-     * - /admin_users/{uid}: Defines administrative privileges.
-     * - /products/{id}: Global catalog managed by admins, readable by all shops.
-     * - /shops/{shopId}: Private profile for each shop owner.
-     * - /shops/{shopId}/orders/{orderId}: Hierarchical order management.
-     *
-     * KEY SECURITY DECISIONS:
-     * 1. Path-Based Ownership: Shop owners are restricted to their own /shops/{shopId} 
-     *    tree using their Firebase UID.
-     * 2. Administrative Override: Users present in the 'admin_users' collection are 
-     *    granted read/write access across all collections to manage inventory and fulfillment.
-     * 3. Public Catalog: Products are readable by any authenticated shop user to 
-     *    facilitate browsing, but modification is strictly restricted to admins.
-     * 4. Relational Integrity: Critical fields like 'shopId' in orders are enforced 
-     *    to match the path to prevent data spoofing.
-     *
-     * DENORMALIZATION FOR AUTHORIZATION:
-     * - Administrative status is verified by checking for the existence of a document 
-     *   in the 'admin_users' collection corresponding to the requester's UID.
-     * - Order ownership is verified by the {shopId} segment in the document path, 
-     *   which must match the user's UID.
+     * Core Philosophy:
+     * This ruleset employs a strict Path-Based Ownership model for user-specific data and a 
+     * Database Access Control (DBAC) model for administrative tasks. User data is nested 
+     * under unique user IDs to ensure Authorization Independence, meaning security checks 
+     * are performed against the document path rather than expensive data lookups.
+     * 
+     * Data Structure:
+     * - /products: Global catalog, readable by all authenticated shops, writable by admins.
+     * - /users/{userId}/profile: Private shop configuration and contact details.
+     * - /users/{userId}/orders: Private order history for a specific shop.
+     * - /roles_admin: A restricted collection where the presence of a UID document grants admin rights.
+     * 
+     * Key Security Decisions:
+     * 1. Authorization Independence: We use the {userId} wildcard in paths to immediately 
+     *    validate ownership against request.auth.uid without needing get() calls.
+     * 2. DBAC for Admins: Administrative privileges are determined by the existence of a 
+     *    document in the /roles_admin collection.
+     * 3. Denormalization: Critical IDs (like shopId) are enforced within document data to 
+     *    maintain relational integrity even though the path is the primary security driver.
+     * 4. Structural Segregation: Administrative roles are kept in a dedicated top-level 
+     *    collection to prevent accidental privilege escalation.
      */
 
-    // --- Helper Functions ---
+    // --- GLOBAL HELPER FUNCTIONS ---
 
-    /** @description Checks if the user is authenticated. */
+    /** @description Checks if the user is authenticated with any provider. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user is the owner of the document based on its path ID. */
+    /** @description Checks if the authenticated user matches the provided ID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the user exists in the admin_users collection. */
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
-    }
-
-    /** @description Combines ownership check with existence check for updates and deletes. */
+    /** @description Checks if a document exists and the user is the owner. Used for updates/deletes. */
     function isExistingOwner(userId) {
       return resource != null && isOwner(userId);
     }
 
-    /** @description Verifies a field is not being changed during an update. */
-    function isImmutable(fieldName) {
-      return request.resource.data[fieldName] == resource.data[fieldName];
+    /** @description Checks if the user has an entry in the admin roles collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // --- Collection Rules ---
+    // --- COLLECTION RULES ---
 
     /**
-     * @description Rules for administrative user profiles.
-     * @path /admin_users/{adminId}
-     * @allow (get) if request.auth.uid == 'admin_123' (User is the admin).
-     * @deny (create) if request.auth.uid != adminId (Cannot create admin record for others).
-     * @principle Ensures only the platform owner can access or manage their admin profile.
+     * @description Global product catalog. Publicly readable by authenticated shops, admin-only writes.
+     * @path /products/{productId}
+     * @allow get, list: if isSignedIn(); (Read catalog)
+     * @allow create, update, delete: if isAdmin(); (Admin management)
+     * @deny create: if !isAdmin(); (Standard users cannot add products)
+     * @principle Role-Based Access Control via administrative lookup.
      */
-    match /admin_users/{adminId} {
-      allow get, list: if isOwner(adminId);
-      allow create: if isOwner(adminId) && request.resource.data.id == adminId;
-      allow update: if isExistingOwner(adminId) && isImmutable('id');
-      allow delete: if isExistingOwner(adminId);
+    match /products/{productId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Rules for shop profiles.
-     * @path /shops/{shopId}
-     * @allow (get) if request.auth.uid == shopId || isAdmin().
-     * @deny (update) if user is not the shop owner and not an admin.
-     * @principle Grants shop owners access to their own profile while allowing admin oversight.
+     * @description User profile for shop metadata. Strict ownership per userId path.
+     * @path /users/{userId}/profile/{profileId}
+     * @allow get, list, create, update: if isOwner(userId);
+     * @deny delete: if true; (Profiles should be deactivated, not deleted, for history)
+     * @principle Path-based ownership ensures a user only accesses their own shop data.
      */
-    match /shops/{shopId} {
-      allow get, list: if isOwner(shopId) || isAdmin();
-      allow create: if (isOwner(shopId) && request.resource.data.id == shopId) || isAdmin();
-      allow update: if (isExistingOwner(shopId) && isImmutable('id')) || (resource != null && isAdmin());
-      allow delete: if (isExistingOwner(shopId)) || (resource != null && isAdmin());
+    match /users/{userId}/profile/{profileId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if false; 
+    }
+
+    /**
+     * @description Shop orders. Enforces ownership and relational integrity with shopId.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow create: if isOwner(userId) && request.resource.data.shopId == userId;
+     * @allow update: if isExistingOwner(userId) && request.resource.data.shopId == resource.data.shopId;
+     * @deny list: if !isOwner(userId);
+     * @principle Validates that the internal shopId matches the secure path userId during creation.
+     */
+    match /users/{userId}/orders/{orderId} {
+      allow get, list: if isOwner(userId);
+      
+      // Relational Integrity: Ensure the shopId in the data matches the owner in the path
+      allow create: if isOwner(userId) 
+                    && request.resource.data.shopId == userId;
+      
+      // Immutability: Ensure shopId cannot be changed to another user's ID
+      allow update: if isExistingOwner(userId) 
+                    && request.resource.data.shopId == resource.data.shopId;
+      
+      allow delete: if isExistingOwner(userId);
 
       /**
-       * @description Rules for orders placed by a shop.
-       * @path /shops/{shopId}/orders/{orderId}
-       * @allow (create) if shopId == request.auth.uid (Shop owner placing an order).
-       * @deny (list) if request.auth.uid != shopId && !isAdmin() (Prevent snooping).
-       * @principle Hierarchical ownership ensures orders are private to shops and accessible to admins.
+       * @description Line items for a specific order. Inherits ownership from parent order path.
+       * @path /users/{userId}/orders/{orderId}/orderItems/{orderItemId}
+       * @allow create: if isOwner(userId) && request.resource.data.orderId == orderId;
+       * @principle Nested subcollection security leveraging parent path variables.
        */
-      match /orders/{orderId} {
-        allow get, list: if isOwner(shopId) || isAdmin();
-        allow create: if (isOwner(shopId) && request.resource.data.shopId == shopId) || isAdmin();
-        allow update: if (isExistingOwner(shopId) && isImmutable('shopId')) || (resource != null && isAdmin());
-        allow delete: if (isExistingOwner(shopId)) || (resource != null && isAdmin());
-
-        /**
-         * @description Rules for individual items within an order.
-         * @path /shops/{shopId}/orders/{orderId}/order_items/{orderItemId}
-         * @allow (get) if isOwner(shopId) (Owner viewing their order details).
-         * @deny (write) if !isOwner(shopId) && !isAdmin().
-         * @principle Inherited authorization from the parent shop context.
-         */
-        match /order_items/{orderItemId} {
-          allow get, list: if isOwner(shopId) || isAdmin();
-          allow create: if (isOwner(shopId) && request.resource.data.orderId == orderId) || isAdmin();
-          allow update: if (isExistingOwner(shopId) && isImmutable('orderId')) || (resource != null && isAdmin());
-          allow delete: if (isExistingOwner(shopId)) || (resource != null && isAdmin());
-        }
+      match /orderItems/{orderItemId} {
+        allow get, list: if isOwner(userId);
+        
+        allow create: if isOwner(userId) 
+                      && request.resource.data.orderId == orderId;
+        
+        allow update: if isExistingOwner(userId) 
+                      && request.resource.data.orderId == resource.data.orderId;
+                      
+        allow delete: if isExistingOwner(userId);
       }
     }
 
     /**
-     * @description Rules for the product catalog.
-     * @path /products/{productId}
-     * @allow (list) if isSignedIn() (Authenticated shops can browse products).
-     * @deny (create) if !isAdmin() (Only admins can add products).
-     * @principle Implements a Public Read / Admin-Only Write pattern for the inventory catalog.
+     * @description Admin role definition collection. Read-only for the user, write-only for existing admins.
+     * @path /roles_admin/{userId}
+     * @allow get: if isOwner(userId) || isAdmin();
+     * @deny list: if !isAdmin(); (Prevent user enumeration)
+     * @principle Database Access Control (DBAC) where document presence signifies a role.
      */
-    match /products/{productId} {
-      allow get, list: if isSignedIn();
-      allow create: if isAdmin();
-      allow update: if resource != null && isAdmin();
-      allow delete: if resource != null && isAdmin();
+    match /roles_admin/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
   }
 }
