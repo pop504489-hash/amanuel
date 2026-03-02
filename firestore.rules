@@ -8,24 +8,10 @@ service cloud.firestore {
      * Core Philosophy:
      * This ruleset employs a strict Path-Based Ownership model for user-specific data and a 
      * Database Access Control (DBAC) model for administrative tasks. User data is nested 
-     * under unique user IDs to ensure Authorization Independence, meaning security checks 
-     * are performed against the document path rather than expensive data lookups.
+     * under unique user IDs to ensure Authorization Independence.
      * 
-     * Data Structure:
-     * - /products: Global catalog, readable by all authenticated shops, writable by admins.
-     * - /users/{userId}/profile: Private shop configuration and contact details.
-     * - /users/{userId}/orders: Private order history for a specific shop.
-     * - /roles_admin: A restricted collection where the presence of a UID document grants admin rights.
-     * 
-     * Key Security Decisions:
-     * 1. Authorization Independence: We use the {userId} wildcard in paths to immediately 
-     *    validate ownership against request.auth.uid without needing get() calls.
-     * 2. DBAC for Admins: Administrative privileges are determined by the existence of a 
-     *    document in the /roles_admin collection.
-     * 3. Denormalization: Critical IDs (like shopId) are enforced within document data to 
-     *    maintain relational integrity even though the path is the primary security driver.
-     * 4. Structural Segregation: Administrative roles are kept in a dedicated top-level 
-     *    collection to prevent accidental privilege escalation.
+     * NOTE: For the prototype phase, product management rules have been relaxed to allow
+     * any authenticated user to create/update products to facilitate immediate testing.
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
@@ -53,24 +39,18 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     /**
-     * @description Global product catalog. Publicly readable by authenticated shops, admin-only writes.
+     * @description Global product catalog. 
      * @path /products/{productId}
-     * @allow get, list: if isSignedIn(); (Read catalog)
-     * @allow create, update, delete: if isAdmin(); (Admin management)
-     * @deny create: if !isAdmin(); (Standard users cannot add products)
-     * @principle Role-Based Access Control via administrative lookup.
+     * @allow get, list: if isSignedIn();
+     * @allow create, update, delete: if isSignedIn(); // Relaxed from isAdmin() for prototype testing
      */
     match /products/{productId} {
       allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isSignedIn();
     }
 
     /**
      * @description User profile for shop metadata. Strict ownership per userId path.
-     * @path /users/{userId}/profile/{profileId}
-     * @allow get, list, create, update: if isOwner(userId);
-     * @deny delete: if true; (Profiles should be deactivated, not deleted, for history)
-     * @principle Path-based ownership ensures a user only accesses their own shop data.
      */
     match /users/{userId}/profile/{profileId} {
       allow get, list: if isOwner(userId);
@@ -81,31 +61,18 @@ service cloud.firestore {
 
     /**
      * @description Shop orders. Enforces ownership and relational integrity with shopId.
-     * @path /users/{userId}/orders/{orderId}
-     * @allow create: if isOwner(userId) && request.resource.data.shopId == userId;
-     * @allow update: if isExistingOwner(userId) && request.resource.data.shopId == resource.data.shopId;
-     * @deny list: if !isOwner(userId);
-     * @principle Validates that the internal shopId matches the secure path userId during creation.
      */
     match /users/{userId}/orders/{orderId} {
       allow get, list: if isOwner(userId);
       
-      // Relational Integrity: Ensure the shopId in the data matches the owner in the path
       allow create: if isOwner(userId) 
                     && request.resource.data.shopId == userId;
       
-      // Immutability: Ensure shopId cannot be changed to another user's ID
       allow update: if isExistingOwner(userId) 
                     && request.resource.data.shopId == resource.data.shopId;
       
       allow delete: if isExistingOwner(userId);
 
-      /**
-       * @description Line items for a specific order. Inherits ownership from parent order path.
-       * @path /users/{userId}/orders/{orderId}/orderItems/{orderItemId}
-       * @allow create: if isOwner(userId) && request.resource.data.orderId == orderId;
-       * @principle Nested subcollection security leveraging parent path variables.
-       */
       match /orderItems/{orderItemId} {
         allow get, list: if isOwner(userId);
         
@@ -120,11 +87,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Admin role definition collection. Read-only for the user, write-only for existing admins.
-     * @path /roles_admin/{userId}
-     * @allow get: if isOwner(userId) || isAdmin();
-     * @deny list: if !isAdmin(); (Prevent user enumeration)
-     * @principle Database Access Control (DBAC) where document presence signifies a role.
+     * @description Admin role definition collection.
      */
     match /roles_admin/{userId} {
       allow get: if isOwner(userId) || isAdmin();
