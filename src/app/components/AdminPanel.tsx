@@ -24,7 +24,8 @@ export function AdminPanel() {
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   
-  const { firestore } = useFirestore();
+  // Fix: useFirestore returns the instance directly, do not destructure
+  const firestore = useFirestore();
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

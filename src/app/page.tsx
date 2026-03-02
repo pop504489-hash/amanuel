@@ -20,7 +20,9 @@ export default function Home() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirestore();
+  
+  // Fix: useFirestore returns the instance directly, do not destructure
+  const firestore = useFirestore();
   const t = translations[language];
 
   // 1. Fetch Real Products from Firestore
