@@ -29,8 +29,7 @@ service cloud.firestore {
 
     /** @description Checks if the user has an entry in the admin roles collection. */
     function isAdmin() {
-      // In this prototype, we check for verified (email) users. 
-      // For production, you would use: exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+      // In this prototype, we check for verified (email/password) users. 
       return isVerifiedUser();
     }
 
@@ -38,11 +37,20 @@ service cloud.firestore {
 
     /**
      * @description Global product catalog. 
-     * @path /products/{productId}
      */
     match /products/{productId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Root level orders collection.
+     * Allows any authenticated shop to create an order.
+     * Allows admins to list, get, and update order statuses.
+     */
+    match /orders/{orderId} {
+      allow create: if isSignedIn();
+      allow get, list, update, delete: if isAdmin();
     }
 
     /**
@@ -55,7 +63,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Shop orders.
+     * @description Legacy nested orders (maintained for path consistency if needed).
      */
     match /users/{userId}/orders/{orderId} {
       allow get, list: if isOwner(userId);
