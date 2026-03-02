@@ -14,6 +14,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { Language, CartItem, Order, translations, Product } from '@/app/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { LayoutGrid, ClipboardList, Sparkles, ShieldCheck, Loader2, Bot, ShoppingBag } from 'lucide-react';
 
