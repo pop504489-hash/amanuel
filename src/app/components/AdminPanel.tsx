@@ -38,9 +38,13 @@ export function AdminPanel() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // 1. Prevent default form submission behavior (page refresh)
     e.preventDefault();
-    
+    console.log('Submission initiated...');
+
+    // 2. Client-side validation
     if (!name || !price || !file) {
+      console.warn('Submission blocked: Missing required fields');
       toast({ 
         title: "Missing Information / መረጃ ጎድሏል", 
         description: "Please provide a name, price, and a product photo.", 
@@ -49,15 +53,26 @@ export function AdminPanel() {
       return;
     }
 
-    if (!firestore) return;
+    // 3. Database readiness check
+    if (!firestore) {
+      console.error('Firestore instance not available');
+      toast({
+        title: "Database Error",
+        description: "System is still connecting to the database. Please try again in a moment.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsUploading(true);
+    console.log('Starting Cloudinary upload...');
     
     try {
-      // 1. Upload Image to Cloudinary (Bypassing Firebase Storage)
+      // 4. Upload Image to Cloudinary (Awaited)
       const imageUrl = await uploadToCloudinary(file);
+      console.log('Cloudinary upload success. Image URL:', imageUrl);
 
-      // 2. Prepare Product Data for Firestore
+      // 5. Prepare Product Data for Firestore
       const productData = {
         name,
         nameAm: nameAm || name,
@@ -71,17 +86,19 @@ export function AdminPanel() {
         description: `${name} in ${category}`,
       };
 
-      // 3. Save to Firestore (Non-blocking update)
+      // 6. Save to Firestore (Non-blocking update)
       const productsRef = collection(firestore, 'products');
+      console.log('Queueing Firestore document creation...');
       addDocumentNonBlocking(productsRef, productData);
 
-      // 4. Success feedback
+      // 7. Success feedback
+      console.log('Product posted successfully!');
       toast({ 
         title: "Success! / ተሳክቷል!", 
         description: `${name} has been added to the catalog.`,
       });
 
-      // 5. Reset form state
+      // 8. Reset form state for next entry
       setName('');
       setNameAm('');
       setPrice('');
@@ -89,12 +106,14 @@ export function AdminPanel() {
       setPreview(null);
       
     } catch (error: any) {
+      console.error('Submission failed with error:', error);
       toast({ 
         title: "Upload Error / ስህተት ተከስቷል", 
         description: error.message || "Failed to post product.", 
         variant: "destructive" 
       });
     } finally {
+      // 9. Re-enable the button regardless of outcome
       setIsUploading(false);
     }
   };
