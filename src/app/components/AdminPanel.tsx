@@ -37,32 +37,25 @@ export function AdminPanel() {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
     if (!name || !price || !file) {
       toast({ 
-        title: "Missing Information", 
+        title: "Missing Information / መረጃ ጎድሏል", 
         description: "Please provide a name, price, and a product photo.", 
         variant: "destructive" 
       });
       return;
     }
 
-    if (!firestore) {
-      toast({ 
-        title: "System Error", 
-        description: "Firestore is not initialized. Please check your connection.", 
-        variant: "destructive" 
-      });
-      return;
-    }
+    if (!firestore) return;
 
     setIsUploading(true);
     
     try {
-      // 1. Upload Image to Cloudinary
+      // 1. Upload Image to Cloudinary (No Firebase Storage used)
       const imageUrl = await uploadToCloudinary(file);
 
       // 2. Construct Product Data
@@ -79,13 +72,13 @@ export function AdminPanel() {
         description: `${name} in ${category}`,
       };
 
-      // 3. Save to Firestore (Non-blocking)
+      // 3. Save to Firestore (Non-blocking as per guidelines)
       const productsRef = collection(firestore, 'products');
       addDocumentNonBlocking(productsRef, productData);
 
       // 4. Success UI
       toast({ 
-        title: "Success!", 
+        title: "Success! / ተሳክቷል!", 
         description: `${name} has been added to the catalog.`,
       });
 
@@ -98,8 +91,8 @@ export function AdminPanel() {
       
     } catch (error: any) {
       toast({ 
-        title: "Failed to Add Product", 
-        description: error.message || "An error occurred during upload.", 
+        title: "Upload Error / ስህተት ተከስቷል", 
+        description: error.message || "Failed to post product.", 
         variant: "destructive" 
       });
     } finally {
@@ -113,11 +106,11 @@ export function AdminPanel() {
         <CardHeader className="bg-primary text-primary-foreground p-6">
           <CardTitle className="flex items-center gap-2 text-2xl font-black">
             <PackagePlus className="h-7 w-7" />
-            Post New Product
+            Post New Product / አዲስ ምርት ይጨምሩ
           </CardTitle>
         </CardHeader>
         <CardContent className="p-8">
-          <form onSubmit={handleAddProduct} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="font-bold">Product Name (EN)</Label>
@@ -130,7 +123,7 @@ export function AdminPanel() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nameAm" className="font-bold">ስም (በአማርኛ)</Label>
+                <Label htmlFor="nameAm" className="font-bold">የምርት ስም (በአማርኛ)</Label>
                 <Input 
                   id="nameAm" 
                   value={nameAm} 
@@ -143,7 +136,7 @@ export function AdminPanel() {
 
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="price" className="font-bold">Price (ETB)</Label>
+                <Label htmlFor="price" className="font-bold">Price (ETB) / ዋጋ</Label>
                 <Input 
                   id="price" 
                   type="number" 
@@ -155,13 +148,13 @@ export function AdminPanel() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="unit" className="font-bold">Unit</Label>
+                <Label htmlFor="unit" className="font-bold">Unit / መጠን</Label>
                 <Select value={unit} onValueChange={setUnit}>
                   <SelectTrigger className="rounded-xl h-12">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Piece">Piece</SelectItem>
+                    <SelectItem value="Piece">Piece (ፍሬ)</SelectItem>
                     <SelectItem value="Crate">Crate (ክሬት)</SelectItem>
                     <SelectItem value="Box">Box (ሳጥን)</SelectItem>
                     <SelectItem value="Pack">Pack (ጥቅል)</SelectItem>
@@ -172,7 +165,7 @@ export function AdminPanel() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category" className="font-bold">Category</Label>
+              <Label htmlFor="category" className="font-bold">Category / ምድብ</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="rounded-xl h-12">
                   <SelectValue />
@@ -188,7 +181,7 @@ export function AdminPanel() {
             </div>
 
             <div className="space-y-3">
-              <Label className="font-bold">Product Photo</Label>
+              <Label className="font-bold">Product Photo / የምርት ፎቶ</Label>
               <div className="relative group">
                 <div 
                   className={`flex flex-col items-center justify-center border-4 border-dashed rounded-3xl p-8 transition-all cursor-pointer bg-muted/20 hover:bg-muted/40 ${preview ? 'border-primary/50' : 'border-muted-foreground/20'}`}
@@ -206,8 +199,7 @@ export function AdminPanel() {
                       <div className="bg-primary/10 p-4 rounded-full">
                         <UploadCloud className="h-10 w-10 text-primary" />
                       </div>
-                      <p className="font-bold">Click or drag to upload photo</p>
-                      <p className="text-xs">Supports JPG, PNG (Max 5MB)</p>
+                      <p className="font-bold">Click to upload photo / ፎቶ ለመጫን እዚህ ይጫኑ</p>
                     </div>
                   )}
                 </div>
@@ -244,12 +236,12 @@ export function AdminPanel() {
               {isUploading ? (
                 <>
                   <Loader2 className="h-6 w-6 animate-spin" />
-                  Processing...
+                  Processing... / በመጫን ላይ...
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="h-6 w-6" />
-                  Post Product to Shop
+                  Post Product / ምርቱን ይጫኑ
                 </>
               )}
             </Button>
@@ -258,7 +250,7 @@ export function AdminPanel() {
       </Card>
       
       <p className="text-center text-xs text-muted-foreground mt-4 font-medium uppercase tracking-widest">
-        Secure Admin Access Only
+        Secure Admin Access Only / ለአስተዳዳሪ ብቻ
       </p>
     </div>
   );

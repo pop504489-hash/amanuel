@@ -5,7 +5,7 @@
  * This avoids the need for a backend signature and stays within the free tier.
  */
 export async function uploadToCloudinary(file: File): Promise<string> {
-  // IMPORTANT: Replace these with your actual Cloudinary credentials from your dashboard
+  // IMPORTANT: Replace these with your actual Cloudinary credentials
   const CLOUD_NAME = 'demo'; // Replace with your actual Cloud Name
   const UPLOAD_PRESET = 'unsigned_preset'; // Replace with your actual Unsigned Upload Preset
 
@@ -13,8 +13,8 @@ export async function uploadToCloudinary(file: File): Promise<string> {
   formData.append('file', file);
   formData.append('upload_preset', UPLOAD_PRESET);
   
-  // Optional: Add folder or tags if configured in your preset
-  // formData.append('folder', 'products');
+  // Apply basic optimization via unsigned transformation if desired
+  // Cloudinary handles format/quality optimization automatically if set in the preset
 
   try {
     const response = await fetch(
@@ -31,7 +31,7 @@ export async function uploadToCloudinary(file: File): Promise<string> {
     }
 
     const data = await response.json();
-    // Use 'secure_url' for HTTPS links
+    // Return the secure URL for HTTPS support
     return data.secure_url;
   } catch (error) {
     console.error('Cloudinary Upload Error:', error);
