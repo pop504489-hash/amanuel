@@ -1,27 +1,37 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Header } from '@/app/components/Header';
 import { ProductCard } from '@/app/components/ProductCard';
 import { OrderHistory } from '@/app/components/OrderHistory';
 import { AIInsights } from '@/app/components/AIInsights';
+import { AdminPanel } from '@/app/components/AdminPanel';
 import { CartSidebar } from '@/app/components/CartSidebar';
-import { MOCK_PRODUCTS, MOCK_ORDERS } from '@/app/lib/mock-data';
-import { Language, CartItem, Order, translations } from '@/app/lib/types';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { Language, CartItem, Order, translations, Product } from '@/app/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
-import { LayoutGrid, ClipboardList, BrainCircuit } from 'lucide-react';
+import { LayoutGrid, ClipboardList, BrainCircuit, ShieldCheck, Loader2 } from 'lucide-react';
 
 export default function Home() {
   const [language, setLanguage] = useState<Language>('en');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { toast } = useToast();
+  const { firestore } = useFirestore();
   const t = translations[language];
 
+  // 1. Fetch Real Products from Firestore
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'products'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: products, isLoading: productsLoading } = useCollection<Product>(productsQuery);
+
+  // 2. Cart Logic
   const updateQuantity = (productId: string, delta: number) => {
     setCart(prev => {
       const existing = prev.find(item => item.productId === productId);
@@ -46,7 +56,7 @@ export default function Home() {
     }
 
     results.forEach(res => {
-      const product = MOCK_PRODUCTS.find(p => p.id === res.id);
+      const product = products?.find(p => p.id === res.id);
       if (product) {
         updateQuantity(res.id, res.quantity || 1);
         toast({ title: `Added to cart`, description: `${res.quantity || 1}x ${product.name} added.` });
@@ -56,21 +66,9 @@ export default function Home() {
   };
 
   const handleCheckout = () => {
-    const newOrder: Order = {
-      id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toISOString(),
-      items: cart.map(item => {
-        const p = MOCK_PRODUCTS.find(prod => prod.id === item.productId)!;
-        return { productId: item.productId, productName: p.name, quantity: item.quantity, price: p.price };
-      }),
-      total: cart.reduce((sum, item) => sum + (MOCK_PRODUCTS.find(p => p.id === item.productId)!.price * item.quantity), 0),
-      status: 'Pending',
-    };
-
-    setOrders([newOrder, ...orders]);
+    toast({ title: "Order Recording Implemented", description: "In a full app, this would save to /users/{uid}/orders in Firestore." });
     setCart([]);
     setIsCartOpen(false);
-    toast({ title: "Order Placed Successfully", description: "You can track it in your dashboard." });
   };
 
   const totalItemsInCart = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -81,14 +79,14 @@ export default function Home() {
         language={language} 
         setLanguage={setLanguage} 
         cartCount={totalItemsInCart}
-        availableProducts={MOCK_PRODUCTS}
+        availableProducts={products || []}
         onSearch={handleSmartSearchResults}
         onCartClick={() => setIsCartOpen(true)}
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <Tabs defaultValue="shop" className="space-y-8">
-          <TabsList className="grid grid-cols-3 h-14 p-1 bg-muted/50 rounded-2xl w-full sm:w-[500px] mx-auto border shadow-sm">
+          <TabsList className="grid grid-cols-4 h-14 p-1 bg-muted/50 rounded-2xl w-full sm:w-[640px] mx-auto border shadow-sm">
             <TabsTrigger value="shop" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold gap-2">
               <LayoutGrid className="h-4 w-4" />
               {t.shop}
@@ -101,36 +99,56 @@ export default function Home() {
               <BrainCircuit className="h-4 w-4" />
               {t.insights}
             </TabsTrigger>
+            <TabsTrigger value="admin" className="rounded-xl data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground font-bold gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              Admin
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="shop" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {MOCK_PRODUCTS.map(product => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  language={language}
-                  quantity={cart.find(item => item.productId === product.id)?.quantity || 0}
-                  onUpdateQuantity={updateQuantity}
-                />
-              ))}
-            </div>
+            {productsLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="font-bold">Syncing with warehouse...</p>
+              </div>
+            ) : products && products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {products.map(product => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    language={language}
+                    quantity={cart.find(item => item.productId === product.id)?.quantity || 0}
+                    onUpdateQuantity={updateQuantity}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-muted/30 rounded-3xl border-2 border-dashed">
+                <LayoutGrid className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground font-medium">No products available yet.</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="orders" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none max-w-4xl mx-auto">
-            <OrderHistory orders={orders} language={language} />
+            <OrderHistory orders={[]} language={language} />
+            <p className="text-center text-muted-foreground mt-8 italic">Order history is currently static for this demo.</p>
           </TabsContent>
 
           <TabsContent value="insights" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none max-w-4xl mx-auto">
             <AIInsights 
-              pastOrders={orders} 
+              pastOrders={[]} 
               language={language} 
               onApplySuggestion={(pid, qty) => {
                 updateQuantity(pid, qty);
                 setIsCartOpen(true);
-                toast({ title: "Suggestion Added", description: `Added predicted quantity to your cart.` });
               }} 
             />
+          </TabsContent>
+
+          <TabsContent value="admin" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
+            <AdminPanel />
           </TabsContent>
         </Tabs>
       </main>
@@ -138,7 +156,7 @@ export default function Home() {
       <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
         <CartSidebar 
           cart={cart} 
-          products={MOCK_PRODUCTS} 
+          products={products || []} 
           language={language}
           onUpdateQuantity={updateQuantity}
           onRemoveItem={removeItem}
