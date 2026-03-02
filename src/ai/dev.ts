@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/inventory-reorder-suggestion.ts';
 import '@/ai/flows/smart-product-search-flow.ts';
+import '@/ai/flows/business-advisor-flow.ts';
