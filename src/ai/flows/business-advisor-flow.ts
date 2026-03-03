@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview A bilingual Smart Business Advisor for shop owners.
  *
