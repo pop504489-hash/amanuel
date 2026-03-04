@@ -4,6 +4,9 @@ const nextConfig = {
   images: { unoptimized: true },
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  experimental: {
+    serverActions: false,
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -22,7 +25,6 @@ const nextConfig = {
         zlib: false,
       };
       
-      // Additional aliases to ensure Node-specific modules don't break the client build
       config.resolve.alias = {
         ...config.resolve.alias,
         'async_hooks': false,
