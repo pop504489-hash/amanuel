@@ -1,7 +1,7 @@
 /**
  * @fileOverview An AI agent for smart natural language product search.
  * 
- * Note: AI logic commented out for static Capacitor build.
+ * Stubbed for static Capacitor build.
  */
 
 import { z } from 'zod';
@@ -23,16 +23,11 @@ const SmartProductSearchOutputSchema = z.object({
 });
 export type SmartProductSearchOutput = z.infer<typeof SmartProductSearchOutputSchema>;
 
+/**
+ * Returns empty results for offline static mode.
+ */
 export async function smartProductSearch(input: SmartProductSearchInput): Promise<SmartProductSearchOutput> {
-  // Mock response for static build
   return {
     foundProducts: []
   };
 }
-
-// Genkit implementation commented out for static build
-/*
-import {ai} from '@/ai/genkit';
-const smartProductSearchPrompt = ai.definePrompt({ ... });
-const smartProductSearchFlow = ai.defineFlow({ ... });
-*/

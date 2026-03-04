@@ -1,7 +1,7 @@
 /**
  * @fileOverview A bilingual Smart Business Advisor for shop owners.
  * 
- * Note: AI logic commented out for static Capacitor build.
+ * Stubbed for static Capacitor build to prevent Node.js module conflicts.
  */
 
 import { z } from 'zod';
@@ -32,21 +32,14 @@ const BusinessAdvisorOutputSchema = z.object({
 });
 export type BusinessAdvisorOutput = z.infer<typeof BusinessAdvisorOutputSchema>;
 
+/**
+ * Returns a localized offline message.
+ */
 export async function businessAdvisor(input: BusinessAdvisorInput): Promise<BusinessAdvisorOutput> {
-  // Mock response for static build
   return {
     response: input.language === 'am' 
-      ? "ይቅርታ፣ ረዳቱ በአሁኑ ጊዜ ከመስመር ውጭ ነው።" 
-      : "I'm sorry, the advisor is currently offline.",
+      ? "ይቅርታ፣ ረዳቱ በአሁኑ ጊዜ ከመስመር ውጭ ነው። እባክዎ ኢንተርኔትዎን ያረጋግጡ።" 
+      : "I'm sorry, the advisor is currently offline. Please check your connection.",
     identifiedItems: []
   };
 }
-
-// Genkit implementation commented out for static build
-/*
-import {ai} from '@/ai/genkit';
-import {ai as genkitAi} from 'genkit';
-
-const businessAdvisorPrompt = ai.definePrompt({ ... });
-const businessAdvisorFlow = ai.defineFlow({ ... });
-*/

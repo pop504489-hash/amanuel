@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +11,7 @@ import { CartSidebar } from '@/app/components/CartSidebar';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Language, CartItem, Order, translations, Product } from '@/app/lib/types';
+import { Language, CartItem, translations, Product } from '@/app/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';

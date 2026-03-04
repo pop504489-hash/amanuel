@@ -13,6 +13,13 @@ const nextConfig = {
         tls: false,
         child_process: false,
         async_hooks: false,
+        path: false,
+        os: false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
       };
     }
     return config;

@@ -1,7 +1,7 @@
 /**
  * @fileOverview An AI agent for providing inventory reorder suggestions.
  * 
- * Note: AI logic commented out for static Capacitor build.
+ * Stubbed for static Capacitor build.
  */
 
 import { z } from 'zod';
@@ -24,16 +24,11 @@ const InventoryReorderSuggestionOutputSchema = z.object({
 });
 export type InventoryReorderSuggestionOutput = z.infer<typeof InventoryReorderSuggestionOutputSchema>;
 
+/**
+ * Returns an empty array for offline static mode.
+ */
 export async function inventoryReorderSuggestion(input: InventoryReorderSuggestionInput): Promise<InventoryReorderSuggestionOutput> {
-  // Mock response for static build
   return {
     suggestions: []
   };
 }
-
-// Genkit implementation commented out for static build
-/*
-import {ai} from '@/ai/genkit';
-const prompt = ai.definePrompt({ ... });
-const inventoryReorderSuggestionFlow = ai.defineFlow({ ... });
-*/
