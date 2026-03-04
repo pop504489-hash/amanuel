@@ -10,6 +10,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverActions: false,
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Prevents bundling Node.js-only modules into the client bundle
