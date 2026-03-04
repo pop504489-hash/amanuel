@@ -1,9 +1,9 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
     namespace "com.amanuel.wholesale"
     compileSdk 34
-
     defaultConfig {
         applicationId "com.amanuel.wholesale"
         minSdk 22
@@ -12,26 +12,24 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
+        aaptOptions {
+             // Sets whether the 'dot' namespaced classes are generated
+             // in the R.java file.
+             namespaced = false
+        }
     }
-
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-
     kotlinOptions {
         jvmTarget = '17'
-    }
-
-    buildFeatures {
-        // Ensure buildFeatures is clean of deprecated properties
     }
 }
 
@@ -48,19 +46,16 @@ dependencies {
     implementation "androidx.core:core-splashscreen:1.0.1"
     implementation project(':capacitor-android')
     implementation project(':capacitor-cordova-android-plugins')
-    
-    testImplementation "junit:junit:4.13.2"
-    androidTestImplementation "androidx.test.ext:junit:1.1.5"
-    androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
+    testImplementation "junit:junit:$rootProject.ext.junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$rootProject.ext.androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$rootProject.ext.androidxEspressoCoreVersion"
 }
 
-apply from: 'capacitor.build.gradle'
-
 try {
-    def servicesConfig = file('google-services.json')
-    if (servicesConfig.exists()) {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, skipping plugin registration.", e)
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
