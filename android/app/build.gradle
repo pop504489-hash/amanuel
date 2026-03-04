@@ -1,16 +1,25 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdk rootProject.ext.compileSdkVersion
+    namespace "com.amanuel.wholesale"
+    compileSdk 34
+    
     defaultConfig {
         applicationId "com.amanuel.wholesale"
-        minSdk rootProject.ext.minSdkVersion
-        targetSdk rootProject.ext.targetSdkVersion
+        minSdk 22
+        targetSdk 34
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
+        
+        aaptOptions {
+             // Sets whether the 'p' modifier is given to apt-get
+             // to include relevant namespaces in the R class.
+             // namespaced = true // Removed as requested, it is deprecated
+        }
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -27,22 +36,16 @@ repositories {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(':capacitor-android')
     implementation "androidx.appcompat:appcompat:$rootProject.ext.androidxAppCompatVersion"
     implementation "androidx.core:core-ktx:$rootProject.ext.androidxCoreVersion"
     implementation "com.google.android.material:material:$rootProject.ext.androidxMaterialVersion"
-    implementation "androidx.browser:browser:$rootProject.ext.androidxBrowserVersion"
-    implementation "androidx.localbroadcastmanager:localbroadcastmanager:$rootProject.ext.androidxLocalbroadcastmanagerVersion"
-    implementation "androidx.exifinterface:exifinterface:$rootProject.ext.androidxExifinterfaceVersion"
-    implementation "com.google.firebase:firebase-messaging:$rootProject.ext.firebaseMessagingVersion"
-    implementation "com.google.android.gms:play-services-location:$rootProject.ext.playServicesLocationVersion"
+    implementation project(':capacitor-android')
+    implementation project(':capacitor-cordova-android-plugins')
+    
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
-    implementation project(':capacitor-cordova-android-plugins')
 }
-
-apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
