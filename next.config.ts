@@ -21,6 +21,12 @@ const nextConfig = {
         https: false,
         zlib: false,
       };
+      
+      // Additional aliases to ensure Node-specific modules don't break the client build
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'async_hooks': false,
+      };
     }
     return config;
   },
