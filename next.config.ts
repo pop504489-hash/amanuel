@@ -28,6 +28,16 @@ const nextConfig = {
         'child_process': false,
         'readline': false,
         'perf_hooks': false,
+        'os': false,
+        'path': false,
+        'dns': false,
+        'module': false,
+        'string_decoder': false,
+        'http': false,
+        'https': false,
+        'zlib': false,
+        'stream': false,
+        'crypto:': false,
       };
 
       config.resolve.fallback = {
